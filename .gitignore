@@ -1,0 +1,5 @@
+# .gitignore
+.idea
+bert_sim/senteval_cn
+models
+bert_sim/rbt3/pytorch_model.bin
