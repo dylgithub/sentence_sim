@@ -27,12 +27,13 @@ import torch.nn.functional as F
 def forward(output1, output2, label, batch_size):
     margin = 1
     print(label)
+    # 欧式距离
     euclidean_distance = F.pairwise_distance(output1, output2, keepdim=True, p=2)
     print(1 - label)
     loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
                                   (label) * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0),
                                                       2)) / batch_size / 2
-
+    # label 为1时欧式距离越大，越不相似，loss对应越大
     loss_contrastive2 = torch.mean(label * torch.pow(euclidean_distance, 2) +
                                    (1 - label) * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0),
                                                            2)) / batch_size / 2
