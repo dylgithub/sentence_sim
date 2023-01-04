@@ -120,4 +120,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # 第一epoch acc0.8左右，loss0.4左右
     main()

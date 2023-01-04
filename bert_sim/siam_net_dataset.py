@@ -32,9 +32,9 @@ class CNewsDataset(Dataset):
             text1, text2, label = line.strip().split('\t')
             label_id = int(label)
             token1 = self.tokenizer(text1, add_special_tokens=True, padding='max_length', truncation=True,
-                                    max_length=200)
-            token2 = self.tokenizer(text1, add_special_tokens=True, padding='max_length', truncation=True,
-                                    max_length=200)
+                                    max_length=50)
+            token2 = self.tokenizer(text2, add_special_tokens=True, padding='max_length', truncation=True,
+                                    max_length=50)
             self.input_ids_text1.append(np.array(token1['input_ids']))
             self.token_type_ids_text1.append(np.array(token1['token_type_ids']))
             self.attention_mask_text1.append(np.array(token1['attention_mask']))

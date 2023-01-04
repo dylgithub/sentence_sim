@@ -26,19 +26,29 @@ import torch.nn.functional as F
 #     print(ent_type_id, token_start_index, token_end_index)
 def forward(output1, output2, label, batch_size):
     margin = 1
-    print(label)
+    # print(label)
     # 欧式距离
     euclidean_distance = F.pairwise_distance(output1, output2, keepdim=True, p=2)
-    print(1 - label)
-    loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
-                                  (label) * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0),
-                                                      2)) / batch_size / 2
-    # label 为1时欧式距离越大，越不相似，loss对应越大
-    loss_contrastive2 = torch.mean(label * torch.pow(euclidean_distance, 2) +
-                                   (1 - label) * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0),
-                                                           2)) / batch_size / 2
+    print(torch.add(torch.norm(output1, keepdim=True, dim=1), torch.norm(output2, keepdim=True, dim=1)))
+    euclidean_distance = torch.div(euclidean_distance, torch.add(torch.norm(output1, keepdim=True, dim=1),
+                                                                 torch.norm(output2, keepdim=True, dim=1)))
+    euclidean_distance = torch.reshape(euclidean_distance, [-1])
+    print(euclidean_distance)
+    # pos = label * euclidean_distance
+    # neg = (1 - label) * torch.clamp(margin - euclidean_distance, min=0.0)
+    # print(neg)
+    # return torch.mean(pos + neg) / batch_size / 2
+    # print(1 - label)
+    # loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
+    #                               (label) * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0),
+    #                                                   2)) / batch_size / 2
+    # # label 为1时欧式距离越大，越不相似，loss对应越大
+    # loss_contrastive2 = torch.mean(label * torch.pow(euclidean_distance, 2) +
+    #                                (1 - label) * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0),
+    #                                                        2)) / batch_size / 2
 
-    return loss_contrastive, loss_contrastive2
+    # return loss_contrastive, loss_contrastive2
+    # return euclidean_distance
 
 
 if __name__ == '__main__':
@@ -50,5 +60,8 @@ if __name__ == '__main__':
     output2 = torch.Tensor(output2)
     label = np.array([1., 1., 1., 0., 0., 0., 1., 0., 1., 1.])
     label = torch.Tensor(label)
-    loss_contrastive, loss_contrastive2 = forward(output1, output2, label, 10)
-    print(loss_contrastive, loss_contrastive2)
+    forward(output1, output2, label, 10)
+    # euclidean_distance = forward(output1, output2, label, 10)
+    # print(euclidean_distance)
+    # loss_contrastive, loss_contrastive2 = forward(output1, output2, label, 10)
+    # print(loss_contrastive, loss_contrastive2)
