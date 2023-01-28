@@ -2,4 +2,5 @@
 .idea
 bert_sim/senteval_cn
 models
+other_data
 bert_sim/rbt3/pytorch_model.bin
