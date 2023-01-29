@@ -2,9 +2,8 @@
 # @File: dataset.py
 # @Description:
 
-import torch
+import pandas as pd
 import numpy as np
-import torch.nn as nn
 from torch.utils.data import Dataset
 from transformers import BertTokenizer
 from tqdm import tqdm
@@ -23,10 +22,12 @@ class CNewsDataset(Dataset):
     def load_data(self, filename):
         # 加载数据
         print('loading data from:', filename)
-        with open(filename, 'r', encoding='utf-8') as rf:
-            lines = rf.readlines()
-        for line in tqdm(lines, ncols=100):
-            text1, text2, label = line.strip().split('\t')
+        df = pd.read_excel(filename)
+        label_list = df["label"].to_list()
+        query1_list = df["query1"].to_list()
+        query2_list = df["query2"].to_list()
+        for index in tqdm(range(len(label_list))):
+            text1, text2, label = query1_list[index], query2_list[index], label_list[index]
             label_id = int(label)
             token = self.tokenizer(text1, text2, add_special_tokens=True, padding='max_length', truncation=True,
                                    max_length=200)

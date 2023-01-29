@@ -15,18 +15,18 @@ from tqdm import tqdm
 
 def main():
     # 参数设置
-    batch_size = 32
+    batch_size = 16
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     epochs = 5
     learning_rate = 5e-6  # Learning Rate不宜太大
 
     # 获取到dataset
-    train_dataset = CNewsDataset('senteval_cn/BQ/BQ.train.data')
-    valid_dataset = CNewsDataset('senteval_cn/BQ/BQ.valid.data')
+    train_dataset = CNewsDataset('other_data/train.xlsx')
+    valid_dataset = CNewsDataset('other_data/test.xlsx')
     # test_dataset = CNewsDataset('THUCNews/data/test.txt')
 
     # 生成Batch
-    # train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
     # test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
@@ -51,7 +51,6 @@ def main():
         accuracy = 0  # 准确率
 
         model.train()
-        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         train_bar = tqdm(train_dataloader, ncols=100)
         for input_ids, token_type_ids, attention_mask, label_id in train_bar:
             # 梯度清零
@@ -120,5 +119,5 @@ def main():
 
 
 if __name__ == '__main__':
-    # 第一epoch acc0.8左右，loss0.4左右
+    # 5个epoch acc是0.9350852272727272
     main()

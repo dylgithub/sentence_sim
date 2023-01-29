@@ -18,10 +18,6 @@ def calculate_dis(output1, output2):
     return euclidean_distance
 
 
-def distance_metric(x, y):
-    return 1 - F.cosine_similarity(x, y)
-
-
 def calculate_dis_bak(output1, output2):
     euclidean_distance = F.pairwise_distance(output1, output2, keepdim=True, p=2)
     euclidean_distance = 1 / (1 + euclidean_distance)
@@ -37,7 +33,7 @@ class ContrastiveLoss(torch.nn.Module):
     Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
     """
 
-    def __init__(self, margin=0.5):
+    def __init__(self, margin=1.0):
         super(ContrastiveLoss, self).__init__()
         self.margin = margin
 
@@ -60,20 +56,15 @@ class ContrastiveLoss(torch.nn.Module):
     #     # loss_contrastive = torch.mean(pos + neg) / batch_size / 2
     #     loss_contrastive = torch.mean(pos + neg)
     #     return loss_contrastive
-    # sentences-transformer中的实现方法
-    def forward(self, output1, output2, labels, batch_size):
-        distances = distance_metric(output1, output2)
-        losses = 0.5 * (
-                labels.float() * distances.pow(2) + (1 - labels).float() * F.relu(self.margin - distances).pow(2))
-        return distances, losses.sum()
-    # def forward(self, output1, output2, label, batch_size):
-    #     euclidean_distance = calculate_dis(output1, output2)
-    #     # label 为1时欧式距离越大，越不相似，loss对应越大
-    #     pos = label * euclidean_distance
-    #     neg = (1 - label) * torch.clamp(self.margin - euclidean_distance, min=0.0)
-    #     loss_contrastive = torch.sum(pos + neg) / batch_size / 2
-    #     # loss_contrastive = torch.mean(pos + neg)
-    #     return euclidean_distance, loss_contrastive
+
+    def forward(self, output1, output2, label, batch_size):
+        euclidean_distance = calculate_dis(output1, output2)
+        # label 为1时欧式距离越大，越不相似，loss对应越大
+        pos = label * euclidean_distance
+        neg = (1 - label) * torch.clamp(self.margin - euclidean_distance, min=0.0)
+        loss_contrastive = torch.sum(pos + neg) / batch_size / 2
+        # loss_contrastive = torch.mean(pos + neg)
+        return euclidean_distance, loss_contrastive
     #
     # def forward(self, output1, output2, label, batch_size):
     #     euclidean_distance = calculate_dis(output1, output2)
@@ -83,31 +74,6 @@ class ContrastiveLoss(torch.nn.Module):
     #     # loss_contrastive = torch.mean(pos + neg) / batch_size / 2
     #     loss_contrastive = torch.mean(pos + neg)
     #     return loss_contrastive
-
-
-class OnlineContrastiveLoss(torch.nn.Module):
-    """
-    OnlineContrastiveLoss function.
-    """
-
-    def __init__(self, margin=0.5):
-        super(OnlineContrastiveLoss, self).__init__()
-        self.margin = margin
-
-    # sentences-transformer中的实现方法
-    def forward(self, output1, output2, labels, batch_size):
-        distance_matrix = distance_metric(output1, output2)
-        negs = distance_matrix[labels == 0]
-        poss = distance_matrix[labels == 1]
-
-        # select hard positive and hard negative pairs
-        negative_pairs = negs[negs < (poss.max() if len(poss) > 1 else negs.mean())]
-        positive_pairs = poss[poss > (negs.min() if len(negs) > 1 else poss.mean())]
-
-        positive_loss = positive_pairs.pow(2).sum()
-        negative_loss = F.relu(self.margin - negative_pairs).pow(2).sum()
-        loss = positive_loss + negative_loss
-        return distance_matrix, loss
 
 
 def main():
@@ -139,8 +105,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     # 损失函数
-    # criterion = ContrastiveLoss()
-    criterion = OnlineContrastiveLoss()
+    criterion = ContrastiveLoss()
 
     best_acc = 0
     # train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -171,7 +136,7 @@ def main():
             )
             # 计算loss
             sim_score, loss = criterion(cls_text1, cls_text2, label_id, batch_size)
-            print(sim_score, loss)
+            print(sim_score)
             # loss = criterion(cls_text1, cls_text2, label_id, batch_size)
             losses += loss.item()
             # sim_score = calculate_dis(cls_text1, cls_text2)
@@ -238,8 +203,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # Valid
-    # ACC: 0.865719696969697
-    # Loss: 1.7259279790249737
-
     main()
