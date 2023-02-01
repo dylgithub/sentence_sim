@@ -2,7 +2,6 @@
 # @File: model.py
 # @Description:
 
-import torch
 import torch.nn as nn
 from transformers import BertModel
 
