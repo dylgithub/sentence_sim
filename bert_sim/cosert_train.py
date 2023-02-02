@@ -6,7 +6,7 @@
 import os
 import torch
 import torch.nn as nn
-from transformers import BertConfig
+from transformers import BertConfig, get_linear_schedule_with_warmup
 from torch.utils.data import DataLoader
 from cosert_model import BertClassifier
 from cosert_dataset import TrainDataset, ValidDataset
@@ -70,7 +70,12 @@ def main():
     # 优化器
     # optimizer = AdamW(model.parameters(), lr=learning_rate)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
+    # 学习率预热
+    # 在预热期间，学习率从0线性增加到优化器中的初始lr
+    # 在预热阶段之后创建一个schedule，使其学习率从优化器中的初始lr线性降低到0
+    total_steps = len(train_dataloader) * epochs
+    scheduler = get_linear_schedule_with_warmup(optimizer=optimizer, num_warmup_steps=0.05 * total_steps,
+                                                num_training_steps=total_steps)
 
     best_acc = 0
 
@@ -103,6 +108,7 @@ def main():
 
             loss.backward()
             optimizer.step()
+            scheduler.step()
             # train_bar.set_postfix(loss=loss.item(), acc=acc)
             train_bar.set_postfix(loss=loss.item())
 
@@ -152,5 +158,5 @@ def main():
 
 
 if __name__ == '__main__':
-    # 最优 Valid ACC: 0.873816287878788
+    # 最优 Valid ACC: 0.879
     main()
