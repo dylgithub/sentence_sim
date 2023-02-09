@@ -13,7 +13,7 @@ class BertClassifier(nn.Module):
     def __init__(self, config):
         super().__init__()
         # 定义BERT模型
-        self.bert = BertModel.from_pretrained("rbt3")
+        self.bert = BertModel.from_pretrained("F:/pytorch_workplace/sentence_sim/bert_sim/rbt3")
         # 定义分类器
         self.classifier = nn.Linear(config.lstm_hidden_size * 4, config.num_class)
         self.lstm = nn.LSTM(768 * 4, config.lstm_hidden_size, batch_first=True, bidirectional=False)

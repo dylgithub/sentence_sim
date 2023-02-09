@@ -9,10 +9,10 @@ from transformers import BertTokenizer
 from tqdm import tqdm
 
 
-class CNewsDataset(Dataset):
+class SimDataset(Dataset):
     def __init__(self, filename):
         # 数据集初始化
-        self.tokenizer = BertTokenizer.from_pretrained('rbt3')
+        self.tokenizer = BertTokenizer.from_pretrained('../../rbt3')
         self.input_ids = []
         self.token_type_ids = []
         self.attention_mask = []
@@ -30,7 +30,7 @@ class CNewsDataset(Dataset):
             text1, text2, label = query1_list[index], query2_list[index], label_list[index]
             label_id = int(label)
             token = self.tokenizer(text1, text2, add_special_tokens=True, padding='max_length', truncation=True,
-                                   max_length=200)
+                                   max_length=100)
             self.input_ids.append(np.array(token['input_ids']))
             self.token_type_ids.append(np.array(token['token_type_ids']))
             self.attention_mask.append(np.array(token['attention_mask']))
@@ -41,7 +41,3 @@ class CNewsDataset(Dataset):
 
     def __len__(self):
         return len(self.input_ids)
-
-
-if __name__ == '__main__':
-    cd = CNewsDataset("THUCNews/data/train.txt")

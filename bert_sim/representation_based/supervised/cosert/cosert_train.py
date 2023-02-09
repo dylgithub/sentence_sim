@@ -51,8 +51,8 @@ def main():
     learning_rate = 2e-5  # Learning Rate不宜太大
 
     # 获取到dataset
-    train_dataset = TrainDataset('other_data/train.xlsx')
-    valid_dataset = ValidDataset('other_data/test.xlsx')
+    train_dataset = TrainDataset('F:/pytorch_workplace/sentence_sim/bert_sim/other_data/train.xlsx')
+    valid_dataset = ValidDataset('F:/pytorch_workplace/sentence_sim/bert_sim/other_data/test.xlsx')
     # test_dataset = CNewsDataset('THUCNews/data/test.txt')
 
     # 生成Batch, 注意这里train的DataLoader中shuffle不可设置为True
@@ -61,7 +61,7 @@ def main():
     # test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # 读取BERT的配置文件
-    bert_config = BertConfig.from_pretrained('rbt3')
+    bert_config = BertConfig.from_pretrained('/bert_sim/rbt3')
     num_labels = 2
 
     # 初始化模型

@@ -9,7 +9,7 @@ import torch.nn as nn
 from transformers import BertConfig
 from torch.utils.data import DataLoader
 from model import BertClassifier
-from dataset import CNewsDataset
+from dataset import SimDataset
 from tqdm import tqdm
 
 
@@ -21,8 +21,8 @@ def main():
     learning_rate = 5e-6  # Learning Rate不宜太大
 
     # 获取到dataset
-    train_dataset = CNewsDataset('other_data/train.xlsx')
-    valid_dataset = CNewsDataset('other_data/test.xlsx')
+    train_dataset = SimDataset('../../other_data/train.xlsx')
+    valid_dataset = SimDataset('../../other_data/test.xlsx')
     # test_dataset = CNewsDataset('THUCNews/data/test.txt')
 
     # 生成Batch
@@ -31,7 +31,7 @@ def main():
     # test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # 读取BERT的配置文件
-    bert_config = BertConfig.from_pretrained('rbt3')
+    bert_config = BertConfig.from_pretrained('../../rbt3')
     num_labels = 2
 
     # 初始化模型

@@ -9,10 +9,10 @@ from transformers import BertTokenizer
 from tqdm import tqdm
 
 
-class CNewsDataset(Dataset):
+class SimDataset(Dataset):
     def __init__(self, filename):
         # 数据集初始化
-        self.tokenizer = BertTokenizer.from_pretrained('rbt3')
+        self.tokenizer = BertTokenizer.from_pretrained('F:/pytorch_workplace/sentence_sim/bert_sim/rbt3')
         self.input_ids_text1 = []
         self.token_type_ids_text1 = []
         self.attention_mask_text1 = []

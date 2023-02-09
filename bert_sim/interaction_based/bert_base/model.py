@@ -11,7 +11,7 @@ class BertClassifier(nn.Module):
     def __init__(self, bert_config, num_labels):
         super().__init__()
         # 定义BERT模型
-        self.bert = BertModel.from_pretrained("rbt3")
+        self.bert = BertModel.from_pretrained("../../rbt3")
         # 定义分类器
         self.classifier = nn.Linear(bert_config.hidden_size, num_labels)
 

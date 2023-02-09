@@ -11,7 +11,7 @@ class BertClassifier(nn.Module):
     def __init__(self, bert_config, num_labels):
         super().__init__()
         # 定义BERT模型
-        self.bert = BertModel.from_pretrained("rbt3")
+        self.bert = BertModel.from_pretrained("/bert_sim/rbt3")
 
     def forward(self, input_ids, attention_mask, token_type_ids):
         # BERT的输出

@@ -4,7 +4,7 @@ import os
 import torch
 from torch.utils.data import DataLoader
 from siamese_network import BertClassifier
-from siam_net_dataset import CNewsDataset
+from siam_net_dataset import SimDataset
 from tqdm import tqdm
 import torch.nn.functional as F
 
@@ -121,8 +121,8 @@ def main():
     # learning_rate = 0.001  # Learning Rate不宜太大
 
     # 获取到dataset
-    train_dataset = CNewsDataset('other_data/train.xlsx')
-    valid_dataset = CNewsDataset('other_data/test.xlsx')
+    train_dataset = SimDataset('F:/pytorch_workplace/sentence_sim/bert_sim/other_data/train.xlsx')
+    valid_dataset = SimDataset('F:/pytorch_workplace/sentence_sim/bert_sim/other_data/test.xlsx')
     # valid_dataset = CNewsDataset('senteval_cn/BQ/BQ.valid.data')
     # test_dataset = CNewsDataset('THUCNews/data/test.txt')
 

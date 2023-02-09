@@ -12,7 +12,7 @@ class BertClassifier(nn.Module):
     def __init__(self):
         super().__init__()
         # 定义BERT模型
-        self.bert = BertModel.from_pretrained("rbt3")
+        self.bert = BertModel.from_pretrained("F:/pytorch_workplace/sentence_sim/bert_sim/rbt3")
 
     # 同构孪生网络
     def forward(self, input_ids_text1, token_type_ids_text1, attention_mask_text1, input_ids_text2, token_type_ids_text2, attention_mask_text2):
