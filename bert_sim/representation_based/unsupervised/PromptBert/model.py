@@ -1,0 +1,44 @@
+from transformers import AutoModel, AutoConfig, AutoTokenizer
+from config import set_args
+import torch
+import torch.nn as nn
+from transformers.models.bert import BertModel, BertConfig
+
+
+args = set_args()
+
+
+class PromptBERT(nn.Module):
+    def __init__(self, mask_id):
+        super(PromptBERT, self).__init__()
+        self.config = BertConfig.from_pretrained(args.bert_pretrain_path)
+        # 可以根据要求制定dropout_rate
+        # self.config.attention_probs_dropout_prob = 0.1
+        # self.config.hidden_dropout_prob = 0.1
+        self.bert = BertModel.from_pretrained(args.bert_pretrain_path, config=self.config)
+        self.mask_id = mask_id
+
+
+    def forward(self, prompt_input_ids, prompt_attention_mask, prompt_token_type_ids,
+                template_input_ids, template_attention_mask, template_token_type_ids):
+        prompt_embedding = self.calc_mask_embedding(prompt_input_ids, prompt_attention_mask, prompt_token_type_ids)
+        # print(prompt_embedding.size())   # torch.Size([4, 768])
+
+        template_embedding = self.calc_mask_embedding(template_input_ids, template_attention_mask, template_token_type_ids)
+        sent_embedding = prompt_embedding - template_embedding
+        return sent_embedding
+
+    def calc_mask_embedding(self, input_ids, attention_mask, token_type_ids):
+        output = self.bert(input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
+        token_embeddings = output[0]    # torch.Size([batch_size, max_len, 768])
+        mask_index = (input_ids == self.mask_id).long()   # 找出mask的那个位置 取出其向量
+        # print(mask_index.size())  # batch_size, max_len
+        mask_embedding = self.get_mask_embedding(token_embeddings, mask_index) # [获得mask的向量]
+        return mask_embedding
+
+    def get_mask_embedding(self, token_embeddings, mask_index):
+        temp = mask_index.unsqueeze(-1) # 在最后一维扩充维度变成[batch_size, max_len, 1]
+        input_mask_expanded = mask_index.unsqueeze(-1).expand(token_embeddings.size()).float() # 维度变化
+        # print(input_mask_expanded.size())    # torch.Size([4, 48, 768])
+        mask_embedding = torch.sum(token_embeddings * input_mask_expanded, 1)
+        return mask_embedding

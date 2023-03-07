@@ -13,7 +13,7 @@ from config import set_args
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from transformers import BertConfig, BertModel, get_linear_schedule_with_warmup
-from dataset import SimDataset
+from dataset import SimDataset, SimTestDataset
 
 
 def cal_cos_sim(embedding1, embedding2):
@@ -29,6 +29,7 @@ class Loss(torch.nn.Module):
 
     def __init__(self):
         super(Loss, self).__init__()
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.temperature = 0.05
         self.gamma = 0.99
         self.q = []  # 积攒负样本的队列
@@ -40,6 +41,7 @@ class Loss(torch.nn.Module):
         self.moco_config.attention_probs_dropout_prob = 0.0  # 不用dropout
         self.moco_bert = BertModel.from_pretrained('F:/pytorch_workplace/sentence_sim/bert_sim/rbt3',
                                                    config=self.moco_config)
+        self.moco_bert.to(self.device)
 
     def forward(self, s1_embedding, s2_embedding, input_ids1, attention_mask1, bert):
         # 计算cos
@@ -64,7 +66,7 @@ class Loss(torch.nn.Module):
         labels = torch.arange(batch_size).cuda()
         if negative_samples is not None:
             batch_size += negative_samples.size(0)  # batch_size + 负样本的个数
-            cos_sim_with_neg = self.cal_cos_sim(s1_embedding,
+            cos_sim_with_neg = cal_cos_sim(s1_embedding,
                                                 negative_samples) / self.temperature  # 当前batch和之前负样本的cos (N, M)
             cos_sim = torch.cat([cos_sim, cos_sim_with_neg], dim=1)  # (N, N+M)
 
@@ -80,12 +82,13 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     os.makedirs(args.output_dir, exist_ok=True)
     # 获取到dataset
-    train_dataset = SimDataset('F:/pytorch_workplace/sentence_sim/bert_sim/other_data/train.xlsx')
-    valid_dataset = SimDataset('F:/pytorch_workplace/sentence_sim/bert_sim/other_data/test.xlsx')
+
+    train_dataset = SimDataset(args.train_data)
+    valid_dataset = SimTestDataset(args.test_data)
 
     # 生成Batch,发现的问题，放在epoch里读取，第二个epoch的batch_size会自动变
-    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    valid_dataloader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
+    train_dataloader = DataLoader(train_dataset, batch_size=args.train_batch_size, shuffle=True)
+    valid_dataloader = DataLoader(valid_dataset, batch_size=args.valid_batch_size, shuffle=False)
     # test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     total_steps = int(len(train_dataloader) * args.num_train_epochs / args.gradient_accumulation_steps)
 
@@ -128,8 +131,16 @@ if __name__ == '__main__':
                 attention_mask=attention_mask_ids.long().to(device),
                 token_type=token_type_ids.long().to(device),
             )
-            loss = criterion(s1_embedding, s2_embedding, input_ids.long(), attention_mask_ids.long(), bert)
+            loss = criterion(s1_embedding, s2_embedding, input_ids.long().to(device), attention_mask_ids.long().to(device), bert)
             # temp_loss += loss
+            # pred_labels = ((torch.ones_like(sim_score) - sim_score) > 0.5).float()
+            # # print(pred_labels)
+            # acc = torch.sum(torch.eq(pred_labels, label_id)).item() / len(label_id)  # acc
+            # sim_score = F.cosine_similarity(s1_embedding, s2_embedding)
+            # pred_labels = (sim_score > 0.5).float()
+            # print(pred_labels)
+            # acc = torch.sum(torch.eq(pred_labels, label_id)).item() / len(label_id)  # acc
+
             ss = 'Epoch:{}, Step:{}, Loss:{:10f}, Time_cost:{:10f}'.format(epoch, step, loss, time.time() - start_time)
             print(ss)
 
@@ -154,6 +165,35 @@ if __name__ == '__main__':
         # with open(logs_path, 'a+') as f:
         #     s += '\n'
         #     f.write(s)
+
+        # # 验证
+        model.eval()
+        losses = 0  # 损失
+        accuracy = 0  # 准确率
+        for input_ids_text1, token_type_ids_text1, attention_mask_text1, input_ids_text2, token_type_ids_text2, attention_mask_text2, label_id in valid_dataloader:
+            label_id = label_id.float().to(device)
+            s1_embedding, _, _ = model(
+                input_ids=input_ids_text1.long().to(device),
+                attention_mask=attention_mask_text1.long().to(device),
+                token_type=token_type_ids_text1.long().to(device),
+            )
+
+            s2_embedding, _, _ = model(
+                input_ids=input_ids_text2.long().to(device),
+                attention_mask=attention_mask_text2.long().to(device),
+                token_type=token_type_ids_text2.long().to(device),
+            )
+
+            sim_score = F.cosine_similarity(s1_embedding, s2_embedding)
+            pred_labels = (sim_score > 0.5).float()
+            # print(pred_labels)
+            acc = torch.sum(torch.eq(pred_labels, label_id)).item() / len(label_id)  # acc
+            accuracy += acc
+            print("acc is......", acc)
+        # 未调超参数，最好为0.73
+        average_acc = accuracy / len(valid_dataloader)
+        print('\tEpoch:{} Valid ACC:'.format(epoch), average_acc)
+
 
         # 每个epoch进行完，则保存模型
         output_dir = os.path.join(args.output_dir, "Epoch-{}.bin".format(epoch))
