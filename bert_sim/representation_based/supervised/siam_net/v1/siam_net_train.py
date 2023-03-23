@@ -37,7 +37,7 @@ class ContrastiveLoss(torch.nn.Module):
     Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
     """
 
-    def __init__(self, margin=0.5):
+    def __init__(self, margin=1.0):
         super(ContrastiveLoss, self).__init__()
         self.margin = margin
 
@@ -62,10 +62,12 @@ class ContrastiveLoss(torch.nn.Module):
     #     return loss_contrastive
     # sentences-transformer中的实现方法
     def forward(self, output1, output2, labels, batch_size):
+        # 余弦相似度的值越大越相似，这个值会越小
         distances = distance_metric(output1, output2)
+        # 正样本对，余弦相似度的值越大越相似，LOSS值应该越小
         losses = 0.5 * (
                 labels.float() * distances.pow(2) + (1 - labels).float() * F.relu(self.margin - distances).pow(2))
-        return distances, losses.sum()
+        return losses.sum()
     # def forward(self, output1, output2, label, batch_size):
     #     euclidean_distance = calculate_dis(output1, output2)
     #     # label 为1时欧式距离越大，越不相似，loss对应越大
@@ -90,7 +92,7 @@ class OnlineContrastiveLoss(torch.nn.Module):
     OnlineContrastiveLoss function.
     """
 
-    def __init__(self, margin=0.5):
+    def __init__(self, margin=1.0):
         super(OnlineContrastiveLoss, self).__init__()
         self.margin = margin
 
@@ -107,7 +109,7 @@ class OnlineContrastiveLoss(torch.nn.Module):
         positive_loss = positive_pairs.pow(2).sum()
         negative_loss = F.relu(self.margin - negative_pairs).pow(2).sum()
         loss = positive_loss + negative_loss
-        return distance_matrix, loss
+        return loss
 
 
 def main():
@@ -116,7 +118,7 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     epochs = 15
     # 目前尝试，用对比损失函数，学习率不易设置的过大
-    learning_rate = 5e-5  # Learning Rate不宜太大
+    learning_rate = 5e-6  # Learning Rate不宜太大
     # learning_rate = 5e-4  # Learning Rate不宜太大
     # learning_rate = 0.001  # Learning Rate不宜太大
 
@@ -170,16 +172,22 @@ def main():
                 token_type_ids_text2=token_type_ids_text2.long().to(device),
             )
             # 计算loss
-            sim_score, loss = criterion(cls_text1, cls_text2, label_id, batch_size)
-            print(sim_score, loss)
+            loss = criterion(cls_text1, cls_text2, label_id, batch_size)
+            # print(sim_score, loss)
             # loss = criterion(cls_text1, cls_text2, label_id, batch_size)
             losses += loss.item()
             # sim_score = calculate_dis(cls_text1, cls_text2)
             # sim_score = F.pairwise_distance(cls_text1, cls_text2, keepdim=True, p=2)
             # print(sim_score)
             # pred_labels = ((torch.ones_like(sim_score) - sim_score) < 0.5).float()
-            pred_labels = ((torch.ones_like(sim_score) - sim_score) > 0.5).float()
-            # print(pred_labels)
+            sim_score = F.cosine_similarity(cls_text1, cls_text2)
+            # pred_labels = ((torch.ones_like(sim_score) - sim_score) > 0.5).float()
+            pred_labels = (sim_score > 0.5).float()
+            # print("sim_score...", sim_score)
+            # print("pred_labels....", pred_labels)
+            # print(label_id)
+            # print(torch.eq(pred_labels, label_id))
+            # print(torch.sum(torch.eq(pred_labels, label_id)).item())
             acc = torch.sum(torch.eq(pred_labels, label_id)).item() / len(label_id)  # acc
             accuracy += acc
 
@@ -211,11 +219,13 @@ def main():
             )
 
             # loss = criterion(cls_text1, cls_text2, label_id, batch_size)
-            sim_score, loss = criterion(cls_text1, cls_text2, label_id, batch_size)
+            loss = criterion(cls_text1, cls_text2, label_id, batch_size)
             losses += loss.item()
 
             # sim_score = calculate_dis(cls_text1, cls_text2)
-            pred_labels = ((torch.ones_like(sim_score) - sim_score) > 0.5).float()
+            sim_score = F.cosine_similarity(cls_text1, cls_text2)
+            # pred_labels = ((torch.ones_like(sim_score) - sim_score) > 0.5).float()
+            pred_labels = (sim_score > 0.5).float()
             # print(pred_labels)
             acc = torch.sum(torch.eq(pred_labels, label_id)).item() / len(label_id)  # acc
             accuracy += acc
@@ -238,8 +248,12 @@ def main():
 
 
 if __name__ == '__main__':
-    # Valid
-    # ACC: 0.865719696969697
-    # Loss: 1.7259279790249737
-
+    # ContrastiveLoss
+    # Valid  11 epoch   注意margin要是1.0
+    # ACC: 0.8703598484848485
+    # Loss: 1.5545443998141721
+    # onlineContrastiveLoss
+    # Valid  10 epoch
+    # ACC: 0.8463541666666666
+    # Loss: 2.3260616251013495
     main()
