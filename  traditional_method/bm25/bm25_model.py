@@ -1,19 +1,19 @@
 from gensim.summarization import bm25
 import jieba
-import jieba.posseg as pseg
 
-
+"""
+注意这里的gensim使用的是3.8.1版本的，高版本的可能会出现找不到gensim.summarization
+"""
 class BM25Model:
     def __init__(self, data_list):
         self.data_list = data_list
+        # corpus : list of list of str
         self.corpus = self.load_corpus()
 
     def bm25_similarity(self, query, num_best=1):
         query = jieba.lcut(query)  # 分词
         bm = bm25.BM25(self.corpus)
-        # average_idf = sum(map(lambda k: float(bm.idf[k]), bm.idf.keys())) / len(bm.idf.keys())
         scores = bm.get_scores(query)
-        print(scores)
         id_score = [(i, score) for i, score in enumerate(scores)]
         id_score.sort(key=lambda e: e[1], reverse=True)
         return id_score[0: num_best]
