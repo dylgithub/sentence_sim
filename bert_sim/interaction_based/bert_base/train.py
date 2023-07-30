@@ -1,7 +1,5 @@
 # coding: utf-8
-# @File: train.py
-# @Time: 2020/10/10 17:14:07
-# @Description:
+
 
 import os
 import torch
