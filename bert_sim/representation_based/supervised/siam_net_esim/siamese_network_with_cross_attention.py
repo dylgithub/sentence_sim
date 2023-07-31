@@ -29,10 +29,19 @@ class BertClassifier(nn.Module):
         return torch.cat([p1, p2], -1)
 
     def cross_attention(self, x1, x2):
+        # 这里的维度为[batch_size,句子1的长度,句子2的长度]
+        # 每一行的值是句子1中每个字对句子2中每个字的关注度
+        # 每一列的值是句子2中每个字对句子1中每个字的关注度
         attention = torch.matmul(x1, x2.transpose(1, 2))
+        # 对句子1中字对句子2中各个字的关注进行归一化
         weight1 = F.softmax(attention, dim=-1)
+        # 这里的维度为[batch_size,句子1的长度,768]
+        # 得到的是句子1对句子2的关注度
         x1_align = torch.matmul(weight1, x2)
+        # 对句子2中字对句子1中各个字的关注进行归一化
         weight2 = F.softmax(attention.transpose(1, 2), dim=-1)
+        # 这里的维度为[batch_size,句子2的长度,768]
+        # 得到的是句子2对句子1的关注度
         x2_align = torch.matmul(weight2, x1)
         return x1_align, x2_align
 
