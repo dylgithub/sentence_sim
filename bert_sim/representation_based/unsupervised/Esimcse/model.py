@@ -1,8 +1,5 @@
 """
 @file   : esimcse.py
-@author : xiaolu
-@email  : luxiaonlp@163.com
-@time   : 2021-10-25
 """
 import torch
 import random

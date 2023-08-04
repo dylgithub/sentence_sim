@@ -1,8 +1,5 @@
 """
 @file   : run_unsup_simcse.py
-@author : xiaolu
-@email  : luxiaonlp@163.com
-@time   : 2021-08-23
 """
 import os
 import torch

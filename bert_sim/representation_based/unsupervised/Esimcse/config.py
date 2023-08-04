@@ -1,8 +1,5 @@
 """
 @file   : config.py
-@author : xiaolu
-@email  : luxiaonlp@163.com
-@time   : 2021-08-23
 """
 import argparse
 
