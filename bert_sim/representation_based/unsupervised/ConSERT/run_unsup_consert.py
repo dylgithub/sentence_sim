@@ -9,6 +9,7 @@ from config import set_args
 from torch.utils.data import DataLoader
 from transformers import get_linear_schedule_with_warmup
 from dataset import SimDataset, SimTestDataset
+import torch.nn.functional as F
 
 
 # def evaluate():
@@ -41,6 +42,11 @@ from dataset import SimDataset, SimTestDataset
 #     corrcoef = compute_corrcoef(all_labels, sims)
 #     pearsonr = compute_pearsonr(all_labels, sims)
 #     return corrcoef, pearsonr
+
+def cal_cos_sim(embedding1, embedding2):
+    embedding1_norm = F.normalize(embedding1, p=2, dim=1)
+    embedding2_norm = F.normalize(embedding2, p=2, dim=1)
+    return torch.mm(embedding1_norm, embedding2_norm.transpose(0, 1))
 
 
 if __name__ == '__main__':
@@ -75,7 +81,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(args.warmup_proportion * total_steps),
                                                 num_training_steps=total_steps)
-
+    loss_fct = torch.nn.CrossEntropyLoss()
     for epoch in range(args.num_train_epochs):
         model.train()
         temp_loss = 0
@@ -88,9 +94,17 @@ if __name__ == '__main__':
 
             if torch.cuda.is_available():
                 input_ids = input_ids.long().cuda()
-                attention_mask_ids = attention_mask.long().cuda()
+                attention_mask = attention_mask.long().cuda()
 
-            loss = model(input_ids1=input_ids, attention_mask1=attention_mask)
+            s1_embedding, s2_embedding = model(input_ids1=input_ids, attention_mask1=attention_mask)
+
+            cos_sim = cal_cos_sim(s1_embedding, s2_embedding) / args.temperature
+
+            batch_size = cos_sim.size(0)
+            assert cos_sim.size() == (batch_size, batch_size)
+            labels = torch.arange(batch_size).cuda()
+            loss = loss_fct(cos_sim.cuda(), labels)
+
             temp_loss += loss
             ss = 'Epoch:{}, Step:{}, Loss:{:10f}, Time_cost:{:10f}'.format(epoch, step, loss, time.time() - start_time)
             print(ss)

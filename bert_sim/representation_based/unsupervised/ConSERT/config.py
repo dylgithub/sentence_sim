@@ -23,5 +23,6 @@ def set_args():
     parser.add_argument('--warmup_proportion', default=0.1, type=float, help='warm up概率，即训练总步长的百分之多少，进行warm up')
     parser.add_argument('--learning_rate', default=3e-5, type=float, help='模型训练时的学习率')
     parser.add_argument('--max_grad_norm', default=1.0, type=float, help='')
+    parser.add_argument('--temperature', default=0.1, type=float, help='')
     parser.add_argument('--output_dir', default='./outputs', type=str, help='模型输出文件夹')
     return parser.parse_args()

@@ -10,14 +10,13 @@ from transformers import BertConfig, BertModel
 
 
 class Model(nn.Module):
-    def __init__(self, temperature=0.1, cutoff_rate=0.15, close_dropout=True):
+    def __init__(self, cutoff_rate=0.15, close_dropout=True):
         super(Model, self).__init__()
-        self.bert = BertModel.from_pretrained("F:/pytorch_workplace/sentence_sim/bert_sim/rbt3")
+        self.config = BertConfig.from_pretrained('F:/pytorch_workplace/sentence_sim/bert_sim/rbt3/config.json')
+        self.bert = BertModel.from_pretrained("F:/pytorch_workplace/sentence_sim/bert_sim/rbt3", config=self.config)
 
-        self.temperature = temperature
         self.cutoff_rate = cutoff_rate
         self.close_dropout = close_dropout
-        self.loss_fct = nn.CrossEntropyLoss()
 
     def cal_cos_sim(self, embedding1, embedding2):
         embedding1_norm = F.normalize(embedding1, p=2, dim=1)
@@ -75,7 +74,6 @@ class Model(nn.Module):
 
     def forward(self, input_ids1, attention_mask1):
         s1_embedding = self.bert(input_ids1, attention_mask1, output_hidden_states=True).last_hidden_state[:, 0]
-
         input_ids2, attention_mask2 = torch.clone(input_ids1), torch.clone(attention_mask1)
         shuffle_input_ids, cutoff_attention_mask = self.shuffle_and_cutoff(input_ids2, attention_mask2)
 
@@ -91,15 +89,4 @@ class Model(nn.Module):
         if self.close_dropout:
             self.config.attention_probs_dropout_prob = orig_attention_probs_dropout_prob
             self.config.hidden_dropout_prob = orig_hidden_dropout_prob
-
-        cos_sim = self.cal_cos_sim(s1_embedding, s2_embedding) / self.temperature
-
-        batch_size = cos_sim.size(0)
-        assert cos_sim.size() == (batch_size, batch_size)
-        labels = torch.arange(batch_size).cuda()
-        loss = self.loss_fct(cos_sim, labels)
-        return loss
-
-    def encode(self, input_ids, attention_mask):
-        s1_embedding = self.bert(input_ids, attention_mask, output_hidden_states=True).last_hidden_state[:, 0]
-        return s1_embedding
+        return s1_embedding, s2_embedding
