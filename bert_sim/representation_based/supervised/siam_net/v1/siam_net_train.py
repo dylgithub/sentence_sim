@@ -8,7 +8,6 @@ from siam_net_dataset import SimDataset
 from tqdm import tqdm
 import torch.nn.functional as F
 
-
 def calculate_dis(output1, output2):
     euclidean_distance = F.pairwise_distance(output1, output2, keepdim=True, p=2)
     euclidean_distance = torch.div(euclidean_distance, torch.add(torch.norm(output1, keepdim=True, dim=1),
