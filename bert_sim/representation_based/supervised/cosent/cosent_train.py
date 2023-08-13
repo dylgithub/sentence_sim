@@ -4,11 +4,10 @@
 
 import os
 import torch
-import torch.nn as nn
 from transformers import BertConfig, get_linear_schedule_with_warmup
 from torch.utils.data import DataLoader
-from cosert_model import BertClassifier
-from cosert_dataset import TrainDataset, ValidDataset
+from cosent_model import BertClassifier
+from cosent_dataset import TrainDataset, ValidDataset
 from tqdm import tqdm
 import torch.nn.functional as F
 
