@@ -42,7 +42,6 @@ def evaluate(epoch, dev_dataloader):
         acc = torch.sum(torch.eq(pred_labels, label_id)).item() / len(label_id)  # acc
         accuracy += acc
         print("acc is......", acc)
-        # 未调超参数，最好为0.73
     average_acc = accuracy / len(dev_dataloader)
     print('\tEpoch:{} Valid ACC:'.format(epoch), average_acc)
 

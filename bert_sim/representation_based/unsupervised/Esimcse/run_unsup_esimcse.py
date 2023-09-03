@@ -186,7 +186,6 @@ if __name__ == '__main__':
             # print(pred_labels)
             acc = torch.sum(torch.eq(pred_labels, label_id)).item() / len(label_id)  # acc
             accuracy += acc
-            print("acc is......", acc)
         # 未调超参数，最好为0.73
         average_acc = accuracy / len(valid_dataloader)
         print('\tEpoch:{} Valid ACC:'.format(epoch), average_acc)
